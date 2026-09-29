@@ -19,9 +19,12 @@ This avoids duplicating shared publications and models the many-to-many relation
 | `language` | text | `language` | Language code (ISO 639-1), e.g. `en`, `es`. |
 | `is_oa` | boolean | `open_access.is_oa` | Whether a free-to-read version exists. |
 | `oa_status` | text | `open_access.oa_status` | Open access route: `gold`, `diamond`, `hybrid`, `bronze`, `green` or `closed`. |
+| `source_id` | text | `primary_location.source.id` (URL prefix removed) | OpenAlex source (journal/conference) ID, e.g. `S205231332`. |
 | `source_name` | text | `primary_location.source.display_name` | Journal or conference where the work was published. |
 | `source_type` | text | `primary_location.source.type` | Source type, e.g. `journal`, `conference`, `repository`. |
 | `publisher` | text | `primary_location.source.host_organization_name` | Publisher of the source. |
+| `issn_l` | text | `primary_location.source.issn_l` | Linking ISSN (ISSN-L): a single ISSN grouping the print and electronic versions of a journal. Best key to join external journal lists (JCR, SJR...). |
+| `issns` | text | `primary_location.source.issn` | All ISSNs of the source, separated by `;`. OpenAlex does not label which one is print and which one electronic. |
 | `domain` | text | `primary_topic.domain.display_name` | Broadest subject level (4 domains). |
 | `field` | text | `primary_topic.field.display_name` | Subject field (26 fields). |
 | `subfield` | text | `primary_topic.subfield.display_name` | Subject subfield (~250 subfields). |
