@@ -127,11 +127,13 @@ OpenAlex's much broader reference set, which includes a large amount of rarely c
 ## 3. Results
 
 ### Output — `sql/01_output_by_year.sql`
+Figure: `figures/01_output.png`.
 - All document types, 2015 → 2025: UDC +48%, USC +47%, UVIGO +67%. Source: `src/explore_counts.py`.
 - Articles peak in 2020–2021 and fall in 2022 at UDC (−11%) and USC (−11%), and in 2024 at UVIGO (−10%).
 - **UDC has the most engineering-oriented profile**: articles are 72% of its output, compared with 80% at USC and 76% at UVIGO, mainly because of conference papers (2,062, 11% of UDC output).
 
 ### Open access — `sql/02_open_access.sql`, `sql/03_open_access_by_route.sql`
+Figure: `figures/02_open_access_routes.png`.
 - **UDC open access rises from 66.5% (2015) to 89.4% (2022–2024)**, with the largest jump between 2020 and 2022. USC is about 5 points below UDC in 2015–2018.
 - OpenAlex uses a broad definition of open access (any free version, including repository copies and free-to-read publisher versions without an open licence), and older years keep rising as repository copies are added. Figures are therefore higher than in WoS or Scopus.
 - **By route (UDC)**:
@@ -140,21 +142,29 @@ OpenAlex's much broader reference set, which includes a large amount of rarely c
   - **Green** falls from 21.5% to about 8%. This does not mean less repository deposit: OpenAlex assigns each work a single, best route, so works that are also hybrid or gold are not counted as green. Recent years may also rise when embargoes end.
   - **Closed** falls from 33.5% to 10–13%.
   - **Diamond** is stable at 22–29% (see the diamond check above).
+- **The jump in hybrid open access from 2021 happens at all three universities at the same time.** A system-wide change of this kind supports the CRUE-CSIC transformative agreements as the main driver, rather than decisions of any single university.
 
 ### International collaboration — `sql/04_international_collaboration.sql`
+Figure: `figures/03_international_collaboration.png`.
 - **UDC rises from 29.9% (2015) to 34.5–37.6% (2019–2023), and then to 42.8% (2024) and 48.2% (2025)** (see the check above).
-- USC starts higher (37–42% in 2015–2018), consistent with its strong presence in highly internationalised fields such as physics and medicine.
+- USC and UVIGO start higher (USC 37–42% in 2015–2018), consistent with USC's strong presence in highly internationalised fields such as physics and medicine.
+- **UVIGO has the highest share for most of the period**, peaking at 53.7% in 2022, and then declines.
+- **The three universities converge at about 48% in 2025** (UDC 48.2%, USC 48.5%, UVIGO about 48%): UDC rises sharply while UVIGO falls. UVIGO's decline matches the rise in its single-country works seen in the collaboration-size check (46.3% → 51.8%).
 - At UDC, conference papers show international collaboration rates similar to articles (26–40%), with more year-to-year variation.
 - Small groups give unstable percentages: for example, USC conference papers jump to 56.4% in 2016, but on only 133 works. Base counts are always reported next to percentages for this reason.
 
 ### Citation impact — `sql/05_citation_impact.sql`
+Figure: `figures/04_citation_impact.png`.
 - Impact indicators are interpreted **only as comparisons between the three universities**, not as absolute levels (see "External validation").
 - **The mean FWCI is not reliable on its own**: it is 2 to 4 times the median every year. The most extreme case is UDC in 2016 (mean 4.49, median 1.07), driven by a handful of very highly cited mega-collaboration papers.
 - **UDC's median FWCI declines** from 1.05 (2015) to 0.74–0.82 (2021–2024). A possible explanation is a change in composition, such as the growth of publications in Spanish open journals, which receive fewer international citations; this has not been tested.
 - **2025 is not reliable** for impact (median 0.55): works published a few months ago have had little time to be cited.
 - **Ranking 2020–2023 by share of top 10% works: UVIGO (28.1%) > USC (24.4%) > UDC (20.6%)**, the same order as in the Leiden Ranking.
+- **UVIGO is ahead of USC and UDC every year from 2016.** UDC dips to 18–19% in 2022–2023 and recovers to 22.1% in 2024.
 
 ### Collaboration between the Galician universities — `sql/06_galician_collaboration.sql`
+Figure: `figures/05_galician_collaboration.png`.
+
 Works co-authored by each pair of universities, articles and reviews, 2015–2025. A work shared by all three counts for each of the three pairs.
 
 | Pair | Shared works 2015–2025 | 2015 → 2025 |
@@ -175,4 +185,4 @@ Works co-authored by each pair of universities, articles and reviews, 2015–202
 ## 4. Pending
 - Check whether the `lineage` filter explains the extra USC works (compare with `institutions.id`).
 - Verify the model of the three journals flagged in the diamond check.
-- Charts and final write-up.
+- Final write-up (README).
