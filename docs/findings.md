@@ -154,10 +154,25 @@ OpenAlex's much broader reference set, which includes a large amount of rarely c
 - **2025 is not reliable** for impact (median 0.55): works published a few months ago have had little time to be cited.
 - **Ranking 2020–2023 by share of top 10% works: UVIGO (28.1%) > USC (24.4%) > UDC (20.6%)**, the same order as in the Leiden Ranking.
 
+### Collaboration between the Galician universities — `sql/06_galician_collaboration.sql`
+Works co-authored by each pair of universities, articles and reviews, 2015–2025. A work shared by all three counts for each of the three pairs.
+
+| Pair | Shared works 2015–2025 | 2015 → 2025 |
+|---|---|---|
+| USC–UVIGO | 1,775 | 114 → 169 (+48%) |
+| UDC–USC | 1,470 | 121 → 184 (+52%) |
+| UDC–UVIGO | 644 | 46 → 61 (+33%) |
+
+- **USC is the hub of the Galician system**: it is part of the two strongest pairs. This is consistent with its size and with geography, as Santiago lies between A Coruña (about 70 km) and Vigo (about 90 km).
+- **UDC–UVIGO is clearly the weakest pair**, with less than half the shared works of the other two and the slowest growth: about 4–5% of UDC's articles and under 3% of UVIGO's (2021–2025). The larger distance between the two cities (about 160 km) is consistent with this, but it is a correlation, not a tested explanation.
+- In relative terms, USC is the main Galician partner of both UDC (11–13% of UDC's articles) and UVIGO (about 8–9% of UVIGO's articles in 2021–2025).
+- USC–UVIGO follows the pandemic pattern seen in total output: a peak in 2020–2021 (207 and 206 works) and a drop in 2022 (158).
+- UDC–USC jumps in 2025 (144 → 184), the same year as UDC's rise in international collaboration.
+- Consistency check: the three pairs add up to 3,889 links for articles and reviews, of the same order as the 3,987 extra links found in `transform.py` for all three document types.
+
 ---
 
 ## 4. Pending
-- Collaboration between the three Galician universities.
 - Check whether the `lineage` filter explains the extra USC works (compare with `institutions.id`).
 - Verify the model of the three journals flagged in the diamond check.
 - Charts and final write-up.
