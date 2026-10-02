@@ -33,6 +33,7 @@ counting (a work shared by several universities counts for each of them).
 
 ### Coverage
 - OpenAlex indexes far more content than Web of Science or Scopus, so absolute counts are clearly higher than in those databases (UDC: about 1,700 publications per year, all types). Comparisons should be made within OpenAlex, not against WoS/Scopus figures.
+- Publication counts are consistent with the CWTS Leiden Ranking Open Edition, which uses the same source (see "External validation" below).
 
 ### Shared publications
 - The 70,959 records correspond to **66,972 unique works**: 3,987 extra links come from works shared between two or three of the universities. Source: `src/transform.py`.
@@ -71,6 +72,56 @@ counting (a work shared by several universities counts for each of them).
   - It is broad-based: all collaboration sizes grow. The largest change is in 6–20 countries, which doubles in 2024 (3.4% → 7.0%), the typical size of European project consortia.
   - Mega-collaborations (more than 20 countries) appear in 2025 (0.2% → 2.2%) and explain about 2 of the 5.4 points gained between 2024 and 2025.
 
+### Check: consistency of the top 10% flag with FWCI
+- **Question**: 18–30% of works are flagged as top 10% every year, far above the 10% expected for an average institution, while the median FWCI is below 1. Is the flag consistent with FWCI?
+- **Check**: FWCI of works inside and outside the top 10%, all three universities. Source: `sql/checks/top10_vs_fwci.sql`.
+- **Result: the flag is internally consistent.** Works flagged as top 10% (15,573 of 61,580, i.e. 25.3%) have a mean FWCI of 8.69, and only 0.2% of them have an FWCI below 1. Works outside the top 10% have a mean FWCI of 0.73.
+- **Note on the median**: a median FWCI below 1 does **not** mean that the typical work is below the world average. FWCI averages 1 worldwide, but citations are highly skewed, so the world median is well below 1. A median of 0.8 and a top 10% share of 20% are compatible.
+- The high top 10% share is explained by OpenAlex's normalisation method, not by the data (see the next section).
+
+### External validation: CWTS Leiden Ranking Open Edition 2025
+The Leiden Ranking Open Edition is built by CWTS from the same source (a full OpenAlex snapshot), with its own methodology. Comparison for 2020–2023, full counting unless stated otherwise. This project: articles and reviews; Leiden: its own selection of publications. Source: Leiden Ranking Open Edition 2025 data; `sql/checks/top10_vs_leiden_2020_2023.sql`.
+
+**Publication counts (all publications)**
+
+| | Leiden | This project | Difference |
+|---|---|---|---|
+| UDC | 5,315 | 5,232 | −1.6% |
+| UVIGO | 8,100 | 8,513 | +5.1% |
+| USC | 10,987 | 12,286 | +11.8% |
+
+- UDC and UVIGO match closely, which validates the extraction (affiliation filter, document types and deduplication).
+- USC has about 1,300 more works here. Likely cause: the `lineage` filter includes all child institutions in the OpenAlex hierarchy, and USC has more of them (research institutes, possibly health-related centres), while CWTS uses its own affiliation criteria. Not verified.
+
+**International collaboration and open access (UDC, all publications)**
+- International collaboration: 39.2% (Leiden) vs about 36.6% here. Consistent.
+- Open access by route: hybrid 18.5% vs about 17.7%, bronze 5.5% vs about 5.4%, green 9.1% vs about 11.8%. Leiden has no diamond category: its gold (42.1%) includes diamond, compared with about 50% gold + diamond here. Total open access: 75.2% vs about 85%. The difference is concentrated in gold/diamond, probably because CWTS uses a different version of the open access data.
+
+**Citation impact**
+
+| | This project (all works, full) | Leiden core, full counting | Leiden core, fractional counting |
+|---|---|---|---|
+| PP(top 10%) UVIGO | 28.1% | 15.3% | 11.5% |
+| PP(top 10%) USC | 24.4% | 13.1% | 9.9% |
+| PP(top 10%) UDC | 20.6% | 9.5% | 6.9% |
+| MNCS UVIGO / USC / UDC | — | 1.4 / 1.3 / 1.0 | 1.1 / 1.0 / 0.8 |
+
+- CWTS only reports normalised impact indicators for core publications (English-language articles and reviews in international journals), so the non-core population cannot be compared.
+- **OpenAlex's precomputed impact indicators are about twice as high as CWTS's**: our top 10% share is 2.2 (UDC), 1.9 (USC) and 1.8 (UVIGO) times Leiden's core, full-counting value. Fractional counting explains only part of the gap (UDC: 9.5% → 6.9%).
+- **The ranking of the three universities is the same in every impact indicator: UVIGO > USC > UDC.** Relative comparisons are therefore valid.
+- **The size of the differences is compressed**: in Leiden (core, fractional) UVIGO's top 10% share is 1.7 times UDC's; here it is only 1.4 times. Results can say which university has higher impact, but not how much higher.
+
+**Why the impact indicators differ.** OpenAlex's FWCI and CWTS's MNCS belong to the same family (actual / expected citations), but:
+
+| | FWCI (OpenAlex) | MNCS (CWTS) |
+|---|---|---|
+| Field definition | about 250 subfields, plus year and document type | about 4,500 micro-fields built from citation relations, plus year |
+| Reference set | all OpenAlex content in the subfield | core publications only |
+| Citation window | publication year + 3 years | citations until the end of 2024 |
+| Self-citations | included | excluded |
+
+OpenAlex's much broader reference set, which includes a large amount of rarely cited content, lowers the expected number of citations and raises the ratio. Broader fields and the inclusion of self-citations push in the same direction.
+
 ---
 
 ## 3. Results
@@ -96,9 +147,17 @@ counting (a work shared by several universities counts for each of them).
 - At UDC, conference papers show international collaboration rates similar to articles (26–40%), with more year-to-year variation.
 - Small groups give unstable percentages: for example, USC conference papers jump to 56.4% in 2016, but on only 133 works. Base counts are always reported next to percentages for this reason.
 
+### Citation impact — `sql/05_citation_impact.sql`
+- Impact indicators are interpreted **only as comparisons between the three universities**, not as absolute levels (see "External validation").
+- **The mean FWCI is not reliable on its own**: it is 2 to 4 times the median every year. The most extreme case is UDC in 2016 (mean 4.49, median 1.07), driven by a handful of very highly cited mega-collaboration papers.
+- **UDC's median FWCI declines** from 1.05 (2015) to 0.74–0.82 (2021–2024). A possible explanation is a change in composition, such as the growth of publications in Spanish open journals, which receive fewer international citations; this has not been tested.
+- **2025 is not reliable** for impact (median 0.55): works published a few months ago have had little time to be cited.
+- **Ranking 2020–2023 by share of top 10% works: UVIGO (28.1%) > USC (24.4%) > UDC (20.6%)**, the same order as in the Leiden Ranking.
+
 ---
 
 ## 4. Pending
-- Citation impact indicators (`05`): mean and median FWCI, % top 10%, % top 1%.
 - Collaboration between the three Galician universities.
+- Check whether the `lineage` filter explains the extra USC works (compare with `institutions.id`).
+- Verify the model of the three journals flagged in the diamond check.
 - Charts and final write-up.
