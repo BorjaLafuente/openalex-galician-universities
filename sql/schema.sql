@@ -76,13 +76,14 @@ CREATE TABLE collab_countries (
     PRIMARY KEY (university, year, country_code)
 );
 
--- Works per university, year and co-author institution (full counting,
--- grouped by lineage). The university itself is included: its count is the total.
+-- Works per university, year and co-author institution (full counting).
+-- The university itself is included: its n_works is the total.
 CREATE TABLE collab_institutions (
     university     TEXT    NOT NULL,
     year           INTEGER NOT NULL,
     institution_id TEXT    NOT NULL REFERENCES institutions (institution_id),
-    n_works        INTEGER NOT NULL,
+    n_works        INTEGER NOT NULL,   -- grouped by lineage (includes child institutions)
+    n_works_direct INTEGER NOT NULL,   -- direct affiliation only; 0 = reached only via lineage
     extracted_on   TEXT    NOT NULL,
     PRIMARY KEY (university, year, institution_id)
 );

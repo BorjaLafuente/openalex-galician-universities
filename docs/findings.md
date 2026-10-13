@@ -27,6 +27,13 @@ counting (a work shared by several universities counts for each of them).
 - 70,959 records downloaded (UDC 15,544; USC 33,709; UVIGO 21,706), matching the counts announced by the API. Source: `src/extract.py`.
 - The list of authors (`authorships`) is not downloaded: papers from large physics collaborations list thousands of authors. International collaboration is measured with `countries_distinct_count` instead.
 
+### Collaboration data
+- Co-author countries and institutions are not taken from individual works but counted by OpenAlex with `group_by`, one request per university, year and grouping, for articles and reviews. Source: `src/extract_collaboration.py`.
+- Institution groups exceed the 200 groups returned per page (2,041 co-author institutions for UDC in 2024 alone), so results are paged with a cursor.
+- Result: 3,052 university–year–country rows, about 82,000 university–year–institution rows and 15,236 institution records (type, country, coordinates). Tables are described in `docs/data_dictionary.md`.
+- Each institution is counted twice: by **lineage** (the institution and all its child institutions) and by **direct affiliation** (only the institution written on the paper). The reason is explained in the check "Parent bodies in the institution counts" below.
+- The collaboration counts were downloaded in October 2026, later than the works, so yearly totals are slightly higher (UDC 2024: 1,248 works vs 1,228 in `works`). The date is stored in `extracted_on`.
+
 ---
 
 ## 2. Data quality
@@ -122,6 +129,33 @@ The Leiden Ranking Open Edition is built by CWTS from the same source (a full Op
 
 OpenAlex's much broader reference set, which includes a large amount of rarely cited content, lowers the expected number of citations and raises the ratio. Broader fields and the inclusion of self-citations push in the same direction.
 
+### Check: parent bodies in the institution counts
+Query: `sql/checks/top_partners_udc.sql`.
+
+Grouping institutions by lineage moves each work up the whole OpenAlex hierarchy. Bodies that do not do research themselves then appear among UDC's largest partners. Comparing the lineage count with the direct-affiliation count separates them clearly (UDC, 2015–2025):
+
+| Institution | Type | By lineage | Direct | Direct share |
+|---|---|---|---|---|
+| Centre National de la Recherche Scientifique (FR) | government | 474 | 390 | 82% |
+| Servicio Gallego de Salud | healthcare | 748 | 603 | 81% |
+| CSIC | government | 626 | 408 | 65% |
+| Instituto de Salud Carlos III | nonprofit | 545 | 210 | 39% |
+| Institut Català de la Salut | healthcare | 278 | 6 | 2.2% |
+| Comunidad de Madrid | government | 367 | 5 | 1.4% |
+| Generalitat de Catalunya | government | 293 | 2 | 0.7% |
+| Andalusian Health Service | healthcare | 267 | 2 | 0.7% |
+| Ministerio de Ciencia, Innovación y Universidades | government | 547 | 2 | 0.4% |
+| CERCA Institution | government | 259 | 1 | 0.4% |
+
+- **The institution type does not separate them**: `government` includes both a ministry and CNRS, France's largest research organisation. Filtering by type would remove real partners.
+- **The direct share does**: real partners have direct shares of 39% or more, while parent bodies (ministries, regional governments, the umbrella body of the Catalan research centres and regional health services that group hospitals) stay below 3%. The gap between both groups is wide, so the result does not depend much on the exact cut-off.
+- **Decision**: an institution is treated as a parent body when less than 10% of its works with a university come from direct affiliations. Lineage counts are kept for real partners, because they correctly credit large organisations as a whole (works with any CSIC institute count for CSIC).
+- **UDC's three largest partners are local**: the Instituto de Investigación Biomédica de A Coruña (INIBIC, 1,506 works), USC (1,465) and the A Coruña university hospital (CHUAC, 1,233), reflecting the weight of the A Coruña health research ecosystem.
+
+### Check: institutions without a record
+Query: `sql/checks/missing_institutions.sql`.
+- 4 institution IDs in the collaboration counts have no record in OpenAlex's institutions endpoint, probably institutions merged or deleted after being counted. Each appears in a single work, so they are kept in the counts and simply have no name, type or location.
+
 ---
 
 ## 3. Results
@@ -183,6 +217,7 @@ Works co-authored by each pair of universities, articles and reviews, 2015–202
 ---
 
 ## 4. Pending
+- Apply the 10% direct-share rule for parent bodies when building the dashboard data.
 - Check whether the `lineage` filter explains the extra USC works (compare with `institutions.id`).
 - Verify the model of the three journals flagged in the diamond check.
 - Final write-up (README).

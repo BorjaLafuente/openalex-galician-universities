@@ -8,6 +8,7 @@ reviews only, as in the main indicators):
 
   - by co-author country      -> data/clean/collab_countries.csv
   - by co-author institution  -> data/clean/collab_institutions.csv
+    (two counts per institution: by lineage and by direct affiliation)
 
 Then it downloads the type, country and coordinates of every institution
 found, which the dashboard needs to filter and map them:
@@ -20,8 +21,15 @@ Notes on the counts (see docs/findings.md):
   - The university's own country (ES) and the university itself are kept:
     their count equals the total number of works, a useful denominator.
     They are filtered out in SQL when only partners are needed.
-  - Institutions are grouped by lineage, so a work with a CSIC institute
-    also counts for CSIC as a whole (and for its parent bodies).
+  - Institutions are counted in two ways:
+      n_works         grouped by lineage: a work with a CSIC institute also
+                      counts for CSIC as a whole, and for any parent body
+                      above it (e.g. a ministry).
+      n_works_direct  direct affiliation only: the institution the authors
+                      actually wrote on the paper.
+    Parent bodies that only appear through lineage (ministries, regional
+    governments, umbrella networks) have n_works_direct = 0 or close to it,
+    which lets them be told apart from real research partners.
 
 Run from the project root:  python src/extract_collaboration.py
 """
@@ -83,16 +91,14 @@ def get_groups(institution_id, year, field):
     return groups
 
 
-def extract_groups():
-    """Download country and institution counts for every university and year."""
-    country_rows = []
-    institution_rows = []
-
+def extract_countries():
+    """Works per university, year and co-author country."""
+    rows = []
     for acronym, inst_id in UNIVERSITIES.items():
         for year in range(YEAR_FROM, YEAR_TO + 1):
-            countries = get_groups(inst_id, year, "authorships.countries")
-            for g in countries:
-                country_rows.append({
+            groups = get_groups(inst_id, year, "authorships.countries")
+            for g in groups:
+                rows.append({
                     "university": acronym,
                     "year": year,
                     # "https://openalex.org/countries/US" -> "US" (ISO code)
@@ -100,21 +106,42 @@ def extract_groups():
                     "country_name": g["key_display_name"],
                     "n_works": g["count"],
                 })
+            print(f"  {acronym} {year}: {len(groups)} countries")
+    return pd.DataFrame(rows)
 
-            institutions = get_groups(inst_id, year, "authorships.institutions.lineage")
-            for g in institutions:
-                institution_rows.append({
+
+def extract_institutions():
+    """Works per university, year and co-author institution, counted by
+    lineage and by direct affiliation."""
+    rows = []
+    for acronym, inst_id in UNIVERSITIES.items():
+        for year in range(YEAR_FROM, YEAR_TO + 1):
+            lineage = get_groups(inst_id, year, "authorships.institutions.lineage")
+            direct = get_groups(inst_id, year, "authorships.institutions.id")
+
+            # Direct counts as a dictionary {institution ID: count}, to look
+            # them up quickly while going through the lineage groups
+            direct_counts = {
+                strip_prefix(g["key"], "https://openalex.org/"): g["count"]
+                for g in direct
+            }
+
+            # Every institution with a direct affiliation is also in its own
+            # lineage, so the lineage groups contain all institutions.
+            # Institutions reached only through lineage get a direct count of 0.
+            for g in lineage:
+                institution_id = strip_prefix(g["key"], "https://openalex.org/")
+                rows.append({
                     "university": acronym,
                     "year": year,
-                    # "https://openalex.org/I11019714" -> "I11019714"
-                    "institution_id": strip_prefix(g["key"], "https://openalex.org/"),
+                    "institution_id": institution_id,
                     "n_works": g["count"],
+                    "n_works_direct": direct_counts.get(institution_id, 0),
                 })
 
-            print(f"  {acronym} {year}: {len(countries)} countries, "
-                  f"{len(institutions)} institutions")
-
-    return pd.DataFrame(country_rows), pd.DataFrame(institution_rows)
+            print(f"  {acronym} {year}: {len(lineage)} institutions by lineage, "
+                  f"{len(direct)} by direct affiliation")
+    return pd.DataFrame(rows)
 
 
 def extract_institution_info(institution_ids):
@@ -155,23 +182,30 @@ def main():
     CLEAN_DIR.mkdir(parents=True, exist_ok=True)
     today = date.today().isoformat()  # extraction date, e.g. "2026-10-13"
 
-    # Skip the slow part if it was already done, so the script can be resumed
-    if COUNTRIES_FILE.exists() and INSTITUTIONS_FILE.exists():
-        print("Group counts already downloaded, skipping")
-        institutions = pd.read_csv(INSTITUTIONS_FILE)
+    # Each file is skipped if it already exists, so the script can be
+    # resumed, and a single file can be refreshed by deleting only that file.
+    if COUNTRIES_FILE.exists():
+        print(f"{COUNTRIES_FILE} already exists, skipping")
     else:
-        print("Downloading collaboration counts...")
-        countries, institutions = extract_groups()
+        print("Downloading counts by country...")
+        countries = extract_countries()
         # OpenAlex changes every day: keep the date the counts refer to
         countries["extracted_on"] = today
-        institutions["extracted_on"] = today
         countries.to_csv(COUNTRIES_FILE, index=False)
-        institutions.to_csv(INSTITUTIONS_FILE, index=False)
         print(f"Saved {len(countries)} rows to {COUNTRIES_FILE}")
+
+    if INSTITUTIONS_FILE.exists():
+        print(f"{INSTITUTIONS_FILE} already exists, skipping")
+        institutions = pd.read_csv(INSTITUTIONS_FILE)
+    else:
+        print("Downloading counts by institution...")
+        institutions = extract_institutions()
+        institutions["extracted_on"] = today
+        institutions.to_csv(INSTITUTIONS_FILE, index=False)
         print(f"Saved {len(institutions)} rows to {INSTITUTIONS_FILE}")
 
     if INSTITUTION_INFO_FILE.exists():
-        print("Institution details already downloaded, skipping")
+        print(f"{INSTITUTION_INFO_FILE} already exists, skipping")
     else:
         ids = sorted(institutions["institution_id"].unique())
         print(f"Downloading details of {len(ids)} institutions...")
