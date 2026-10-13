@@ -149,7 +149,17 @@ Grouping institutions by lineage moves each work up the whole OpenAlex hierarchy
 
 - **The institution type does not separate them**: `government` includes both a ministry and CNRS, France's largest research organisation. Filtering by type would remove real partners.
 - **The direct share does**: real partners have direct shares of 39% or more, while parent bodies (ministries, regional governments, the umbrella body of the Catalan research centres and regional health services that group hospitals) stay below 3%. The gap between both groups is wide, so the result does not depend much on the exact cut-off.
-- **Decision**: an institution is treated as a parent body when less than 10% of its works with a university come from direct affiliations. Lineage counts are kept for real partners, because they correctly credit large organisations as a whole (works with any CSIC institute count for CSIC).
+- **The lineage count is also inflated for some universities.** The check over all three universities (`scripts/check_parent_bodies.R` in the dashboard repository) shows 1,736 university–institution pairs below 10%, 545 of them with 10 or more works. Besides ministries, regional governments and funders (UK Research and Innovation, the Dutch Research Council, the US Department of Energy), it includes:
+
+| Pair | By lineage | Direct |
+|---|---|---|
+| USC – Université Paris Nanterre | 1,003 | 4 |
+| USC – Université Paris 8 | 1,000 | 1 |
+| USC – Universitat Jaume I | 1,185 | 103 |
+| USC – Max Planck Society | 778 | 17 |
+
+  USC does not have a thousand works with Paris Nanterre: OpenAlex places under these universities a laboratory that takes part in large physics consortia, and lineage carries those works up to the university. Research societies such as Max Planck or Helmholtz behave in a similar way, because their researchers sign with the specific institute.
+- **Decision**: lineage counts are kept when at least 10% of an institution's works with a university come from direct affiliations; below 10%, the lineage count is not reliable and **the direct count is used instead**. Institutions left with no works (for example funders with no direct affiliations) disappear. A first version simply removed the institutions below 10%, but that also removed real partners such as Universitat Jaume I (103 direct works with USC). With the direct count, no real affiliation is lost and inflated counts are corrected: the Ministerio de Ciencia goes from 2,092 to 23 works with USC, and Max Planck institutes appear individually. Applied in `scripts/build_app_data.R` in the dashboard repository.
 - **UDC's three largest partners are local**: the Instituto de Investigación Biomédica de A Coruña (INIBIC, 1,506 works), USC (1,465) and the A Coruña university hospital (CHUAC, 1,233), reflecting the weight of the A Coruña health research ecosystem.
 
 ### Check: institutions without a record
@@ -217,7 +227,6 @@ Works co-authored by each pair of universities, articles and reviews, 2015–202
 ---
 
 ## 4. Pending
-- Apply the 10% direct-share rule for parent bodies when building the dashboard data.
 - Check whether the `lineage` filter explains the extra USC works (compare with `institutions.id`).
 - Verify the model of the three journals flagged in the diamond check.
 - Final write-up (README).
