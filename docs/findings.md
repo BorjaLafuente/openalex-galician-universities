@@ -78,6 +78,19 @@ counting (a work shared by several universities counts for each of them).
   - It only happens at UDC: the share of single-country works falls from 62.4% (2023) to 51.8% (2025), while it is stable at USC (51.5–54.7%) and rises slightly at UVIGO (46.3–51.8%). A change in OpenAlex data would affect all three.
   - It is broad-based: all collaboration sizes grow. The largest change is in 6–20 countries, which doubles in 2024 (3.4% → 7.0%), the typical size of European project consortia.
   - Mega-collaborations (more than 20 countries) appear in 2025 (0.2% → 2.2%) and explain about 2 of the 5.4 points gained between 2024 and 2025.
+- **Second check: language and indexing lag.** The last year could be biased if works in small Spanish and Galician journals, which are rarely international, reach OpenAlex later than those in large international journals. Source: `sql/checks/international_by_language_udc.sql`.
+
+| Year | Works | % in es/gl/pt | % in English | No language | % international (all) | % international (English only) |
+|---|---|---|---|---|---|---|
+| 2015 | 1,059 | 34.6 | 64.1 | 0 | 29.9 | 39.2 |
+| 2020 | 1,364 | 23.3 | 76.4 | 0 | 37.3 | 45.2 |
+| 2023 | 1,254 | 23.7 | 75.2 | 9 | 37.6 | 46.1 |
+| 2024 | 1,228 | 20.5 | 77.1 | 5 | 42.8 | 50.3 |
+| 2025 | 1,379 | 14.9 | 75.7 | 95 | 48.2 | 55.1 |
+
+  - **The rise is also seen among English-language works** (46.1% → 50.3% → 55.1%), which are all indexed at a similar speed. It is not explained by a change in the language mix: the share of works in English is the same in 2025 as in previous years.
+  - **2025 is still being processed in OpenAlex**: 95 works (6.9%) have no language assigned yet, compared with 0–9 in earlier years. The fall in local-language works in 2025 (20.5% → 14.9%) comes mostly from these works without language, not from missing works.
+  - **Conclusion**: the rise in UDC's international collaboration in 2024–2025 is real. The size of the 2025 value should still be confirmed with a later download, once OpenAlex has finished processing that year.
 
 ### Check: consistency of the top 10% flag with FWCI
 - **Question**: 18–30% of works are flagged as top 10% every year, far above the 10% expected for an average institution, while the median FWCI is below 1. Is the flag consistent with FWCI?
@@ -227,6 +240,7 @@ Works co-authored by each pair of universities, articles and reviews, 2015–202
 ---
 
 ## 4. Pending
+- Re-download 2025 in a few months and check whether UDC's international collaboration (48.2%) and the works without language change.
 - Check whether the `lineage` filter explains the extra USC works (compare with `institutions.id`).
 - Verify the model of the three journals flagged in the diamond check.
 - Final write-up (README).
